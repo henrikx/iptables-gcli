@@ -1,0 +1,3 @@
+[submodule "git.cs"]
+	path = git.cs
+	url = https://github.com/migueldeicaza/gui.cs.git
