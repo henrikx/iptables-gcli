@@ -1,2 +1,18 @@
 # iptables-gcli
-When even `ufw` seems too bloated, `iptables-gcli` is an `iptables` wrapper which aims to make it easy to add, edit and reorder iptables rules by adding a graphical user-interface to `iptables`. The app never attempts to manage any iptables rules for you, but rather provides an interface for managing such rules.
+`iptables-gcli` is a portable `iptables` wrapper which aims to make it easy to add, edit and reorder iptables rules by adding a graphical user-interface to `iptables`. 
+
+To save your rules, please use `iptables-save` and `iptables-persistent`. This is by design, as the application is only an editor.
+
+# Notes
+- This software is currently in alpha and is **NOT READY FOR PRODUCTION USE!**
+
+# Building
+Due to the nature of .NET Core, even though this is a Linux program it may still be built on Windows machines.
+- `git clone https://github.com/henrikx/iptables-gcli.git`
+- `cd iptables-gcli`
+- `dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true,PublishTrimmed=true --self-contained`
+- Binaries will be placed in `iptables-gcli\iptables-gcli\bin\Release\netcoreapp3.1\linux-x64\publish`
+
+# Screenshots
+![image](https://user-images.githubusercontent.com/10342989/147159688-0e403738-bd30-4685-9069-449075e3f43e.png)
+![image](https://user-images.githubusercontent.com/10342989/147159712-1a485563-1c93-4e94-b672-bcc3e331ea5d.png)
