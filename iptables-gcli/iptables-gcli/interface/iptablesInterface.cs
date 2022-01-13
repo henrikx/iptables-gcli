@@ -7,7 +7,7 @@ namespace iptables_gcli
 {
     public class iptablesInterface
     {
-        private List<Rule> rules = new List<Rule>();
+        private List<dynamic> rules = new List<dynamic>();
         public int reorderRule(int fromIndex, int toIndex)
         {
             if (fromIndex < 0 || fromIndex >= rules.Count)
@@ -29,10 +29,21 @@ namespace iptables_gcli
         }
         public int addRule(string rule)
         {
-            rules.Add(new Rule(rule));
+            if (ProgramState.Table == "nat")
+            {
+                rules.Add(new NATRule(rule));
+            } else 
+            {
+                rules.Add(new Rule(rule));
+            }
             return rules.Count - 1;
         }
         public int addRule(Rule rule)
+        {
+            rules.Add(rule);
+            return rules.Count - 1;
+        }
+        public int addRule(NATRule rule)
         {
             rules.Add(rule);
             return rules.Count - 1;
@@ -47,10 +58,6 @@ namespace iptables_gcli
             rules.RemoveAt(index);
             return true;
         }
-        // private List<string> runIPTablesCommand(string arguments)
-        // {
-
-        // }
         public List<string> applyRules()
         {
             List<string> failedrules = new List<string>();
@@ -99,11 +106,11 @@ namespace iptables_gcli
             return failedrules;
             #else
             //simulate iptables command output
-            return new List<string>() { "gg" }; //no failed commands. todo: linting?
+            return new List<string>() {  }; //no failed commands. todo: linting?
             #endif
 
         }
-        public List<Rule> getiptablesRules(bool refresh = false)
+        public List<dynamic> getiptablesRules(bool refresh = false)
         {
             if (refresh)
             {
@@ -114,7 +121,7 @@ namespace iptables_gcli
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/sbin/iptables",
-                        Arguments = "-S",
+                        Arguments = $"-S -t {ProgramState.Table}",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true
@@ -127,34 +134,65 @@ namespace iptables_gcli
                     string line = proc.StandardOutput.ReadLine();
                     output += line + "\n" ;
                 }
+                if (proc.ExitCode != 0)
+                {
+                    throw new Exception($"Error while getting iptables rules: {output}");
+                }
 #else
-                string output = "-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-N DOCKER\n" +
-                "-N DOCKER-ISOLATION-STAGE-1\n" +
-                "-N DOCKER-ISOLATION-STAGE-2\n" +
-                "-N DOCKER-USER\n" +
-                "-A INPUT -p udp -m udp --dport 1193 -j ACCEPT\n" +
-                "-A INPUT -p tcp -m tcp --dport 1194 -j ACCEPT\n" +
-                "-A FORWARD -j DOCKER-USER\n" +
-                "-A FORWARD -j DOCKER-ISOLATION-STAGE-1\n" +
-                "-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A FORWARD -o docker0 -j DOCKER\n" +
-                "-A FORWARD -i docker0 ! -o docker0 -j ACCEPT\n" +
-                "-A FORWARD -i docker0 -o docker0 -j ACCEPT\n" +
-                "-A FORWARD -o br-cd4f2c06e311 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A FORWARD -o br-cd4f2c06e311 -j DOCKER\n" +
-                "-A FORWARD -i br-cd4f2c06e311 ! -o br-cd4f2c06e311 -j ACCEPT\n" +
-                "-A FORWARD -i br-cd4f2c06e311 -o br-cd4f2c06e311 -j ACCEPT\n" +
-                "-A FORWARD -o br-146391d4b96d -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"; //simulated output in case of debugging
+                string output = "";
+                if (ProgramState.Table == "filter")
+                {
+                    output = 
+                    "-P INPUT ACCEPT\n" +
+                    "-P FORWARD ACCEPT\n" +
+                    "-P OUTPUT ACCEPT\n" +
+                    "-N DOCKER\n" +
+                    "-N DOCKER-ISOLATION-STAGE-1\n" +
+                    "-N DOCKER-ISOLATION-STAGE-2\n" +
+                    "-N DOCKER-USER\n" +
+                    "-A INPUT -p udp -m udp --dport 1193 -j ACCEPT\n" +
+                    "-A INPUT -p tcp -m tcp --dport 1194 -j ACCEPT\n" +
+                    "-A FORWARD -j DOCKER-USER\n" +
+                    "-A FORWARD -j DOCKER-ISOLATION-STAGE-1\n" +
+                    "-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n" +
+                    "-A FORWARD -o docker0 -j DOCKER\n" +
+                    "-A FORWARD -i docker0 ! -o docker0 -j ACCEPT\n" +
+                    "-A FORWARD -i docker0 -o docker0 -j ACCEPT\n" +
+                    "-A FORWARD -o br-cd4f2c06e311 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n" +
+                    "-A FORWARD -o br-cd4f2c06e311 -j DOCKER\n" +
+                    "-A FORWARD -i br-cd4f2c06e311 ! -o br-cd4f2c06e311 -j ACCEPT\n" +
+                    "-A FORWARD -i br-cd4f2c06e311 -o br-cd4f2c06e311 -j ACCEPT\n" +
+                    "-A FORWARD -o br-146391d4b96d -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"; //simulated output in case of debugging
+                } else if (ProgramState.Table == "nat")
+                {
+                    output =
+                    "-P PREROUTING ACCEPT \n" +
+                    "-P INPUT ACCEPT \n" +
+                    "-P OUTPUT ACCEPT \n" +
+                    "-P POSTROUTING ACCEPT\n" +
+                    "-A PREROUTING -i enp9s0 -p tcp -m multiport --dports 80,443 -j DNAT --to-destination 10.0.0.3\n" +
+                    "-A PREROUTING -s 10.0.0.0/24 -d 65.21.140.139/32 -p tcp -m multiport --dports 80,443 -j DNAT --to-destination 10.0.0.3\n" +
+                    "-A PREROUTING -i enp9s0 -p tcp -m multiport --dports 32400 -j DNAT --to-destination 10.0.0.2\n" +
+                    "-A POSTROUTING -o enp9s0 -j MASQUERADE \n" +
+                    "-A DOCKER -d 127.0.0.1/32 ! -i br-146391d4b96d -p tcp -m tcp --dport 4000 -j DNAT --to-destination 172.24.0.2:4000\n" +
+                    "-A POSTROUTING -s 10.0.0.0/24 -d 10.0.0.3/32 -p tcp -m multiport --dports 80,443 -j SNAT --to-source 10.0.0.1\n";
+                }
+
 
 #endif
                 foreach (string line in output.Split('\n'))
                 {
                     if (line.Trim() != "")
                     {
-                        rules.Add(new Rule(line));
+                        if (ProgramState.Table == "nat")
+                        {
+                            rules.Add(new NATRule(line));
+                            
+                        }
+                        else
+                        {
+                            rules.Add(new Rule(line));
+                        }
                     }
                 }
 
@@ -167,56 +205,18 @@ namespace iptables_gcli
         // IPv4 rules ONLY! (for now) -- new class will be created for IPv6 eventually
         public class Rule
         {
+            public Rule() { }
             /// <summary>
-            /// Create a rule from parameters
+            /// The regex used to parse the iptables output
             /// </summary>
-            public Rule (string RuleType, string Chain, string Protocol, string Source, string Destination, string Target, string OutInterface, string InInterface, string DestinationPort, string SourcePort, string PhysicalInInterface, string PhysicalOutInterface, string Fragmentation, string TcpFlags, string TcpOptionNumber, string IcmpType, string EthernetAddress, string PacketFlowRate, string PacketBurstRate, string ConnectionStates, string Service, string PacketIncomingBridgeInterface, string PacketOutgoingBridgeInterface, string PacketBeingBridged, string AdditionalModules, string AdditionalParameters, string OriginalFullLine = "")
-            {
-                ruleType = RuleType;
-                chain = Chain;
-                protocol = Protocol;
-                source = Source;
-                destination = Destination;
-                destinationPort = DestinationPort;
-                sourcePort = SourcePort;
-                target = Target;
-                outInterface = OutInterface;
-                inInterface = InInterface;
-                physicalInInterface = PhysicalInInterface;
-                physicalOutInterface = PhysicalOutInterface;
-                fragmentation = Fragmentation;
-                tcpflags = TcpFlags;
-                tcpOptionNumber = TcpOptionNumber;
-                icmpType = IcmpType;
-                ethernetAddress = EthernetAddress;
-                packetflowRate = PacketFlowRate;
-                packetburstRate = PacketBurstRate;
-                connectionStates = ConnectionStates;
-                service = Service;
-                packetIncomingBridgeInterface = PacketIncomingBridgeInterface;
-                packetOutgoingBridgeInterface = PacketOutgoingBridgeInterface;
-                additionalModules = AdditionalModules;
-                additionalParameters = AdditionalParameters;
-                packetBeingBridged = PacketBeingBridged;
-
-                if (OriginalFullLine != "")
-                {
-                    unprocessedFullLine = OriginalFullLine;
-                }
-                else
-                {
-                    unprocessedFullLine = fulllineFromValues;
-                }
-            }
+            protected Regex commandLineParameterRegex = new Regex(@"(-[^ ]*?)( ([^-].*?)|)( |$|\n)");
+            
             /// <summary>
             /// Create a rule object from iptables syntax
             /// </summary>
             public Rule(string line)
             {
                 // Possible caveat: if a parameter contains a space, it will not match the regex. This should not happen, however there is a possibility that a value may be enclosed in quotation marks (edgecase).
-                // Possible caveat 2: modules defined by "-m" are not captured, however they are correctly generated based on the output if a supported module is used.
-                // TODO: there needs to be a way to define when a rule is output as a manual rule, and when it is a generated rule.
-                Regex commandLineParameterRegex = new Regex(@"(-.*?) (.*?)( |$|\n)");
                 MatchCollection matches = commandLineParameterRegex.Matches(line); //matches commandlineparamters and their values
                 List<string> detectedModules = new List<string>(); //only contains expicitly defined modules by `-m`. modules defined automatically are not included.
                 foreach (Match part in matches)
@@ -226,114 +226,129 @@ namespace iptables_gcli
                     {
                         case "-A":
                             ruleType = RuleType.ADD;
-                            chain = part.Groups[2].Value;
+                            chain = part.Groups[3].Value;
                             break;
                         case "--dport":
-                            destinationPort = part.Groups[2].Value;
+                            destinationPort = part.Groups[3].Value;
                             break;
                         case "--sport":
-                            sourcePort = part.Groups[2].Value;
+                            sourcePort = part.Groups[3].Value;
                             break;
                         case "-j":
-                            target = part.Groups[2].Value;
+                            target = part.Groups[3].Value;
                             break;
                         case "-i":
-                            inInterface = part.Groups[2].Value;
+                            inInterface = part.Groups[3].Value;
                             break;
                         case "-o":
-                            outInterface = part.Groups[2].Value;
+                            outInterface = part.Groups[3].Value;
                             break;
                         case "-p":
-                            protocol = part.Groups[2].Value;
+                            protocol = part.Groups[3].Value;
                             break;
                         case "-s":
-                            source = part.Groups[2].Value;
+                            source = part.Groups[3].Value;
                             break;
                         case "-d":
-                            destination = part.Groups[2].Value;
+                            destination = part.Groups[3].Value;
                             break;
                         case "--physdev-in":
-                            physicalInInterface = part.Groups[2].Value;
+                            physicalInInterface = part.Groups[3].Value;
                             detectedModules.Add("physdev");
                             break;
                         case "--physdev-out":
-                            physicalOutInterface = part.Groups[2].Value;
+                            physicalOutInterface = part.Groups[3].Value;
                             detectedModules.Add("physdev");
                             break;
                         case "-f":
-                            fragmentation = part.Groups[2].Value;
+                            fragmentation = "yes";
                             break;
                         case "--tcp-flags":
-                            tcpflags = part.Groups[2].Value;
+                            tcpflags = part.Groups[3].Value;
                             break;
                         case "--tcp-option":
-                            tcpOptionNumber = part.Groups[2].Value;
+                            tcpOptionNumber = part.Groups[3].Value;
                             break;
                         case "--icmp-type":
-                            icmpType = part.Groups[2].Value;
+                            icmpType = part.Groups[3].Value;
                             break;
                         case "--mac-source":
-                            ethernetAddress = part.Groups[2].Value;
+                            ethernetAddress = part.Groups[3].Value;
                             if (!detectedModules.Contains("mac"))
                             {
                                 detectedModules.Add("mac");
                             }
                             break;
                         case "--limit":
-                            packetflowRate = part.Groups[2].Value;
+                            packetflowRate = part.Groups[3].Value;
                             if (!detectedModules.Contains("limit"))
                             {
                                 detectedModules.Add("limit");
                             }
                             break;
                         case "--limit-burst":
-                            packetburstRate = part.Groups[2].Value;
+                            packetburstRate = part.Groups[3].Value;
                             if (!detectedModules.Contains("limit"))
                             {
                                 detectedModules.Add("limit");
                             }
                             break;
                         case "--ctstate":
-                            connectionStates = part.Groups[2].Value;
+                            connectionStates = part.Groups[3].Value;
                             if (!detectedModules.Contains("ctstate"))
                             {
                                 //detectedModules.Add("ctstate");
                             }
                             break;
                         case "--uid-owner": //not sure about this one right now.
-                            service = part.Groups[2].Value;
+                            service = part.Groups[3].Value;
                             if (!detectedModules.Contains("owner"))
                             {
                                 detectedModules.Add("owner");
                             }
                             break;
                         case "--physdev-is-in":
-                            packetIncomingBridgeInterface = part.Groups[2].Value;
+                            packetIncomingBridgeInterface = part.Groups[3].Value;
                             if (!detectedModules.Contains("physdev"))
                             {
                                 detectedModules.Add("physdev");
                             }
                             break;
                         case "--physdev-is-out":
-                            packetOutgoingBridgeInterface = part.Groups[2].Value;
+                            packetOutgoingBridgeInterface = part.Groups[3].Value;
                             if (!detectedModules.Contains("physdev"))
                             {
                                 detectedModules.Add("physdev");
                             }
                             break;
+                        case "--dports":
+                            destinationPort = part.Groups[3].Value;
+                            if (!detectedModules.Contains("multiport"))
+                            {
+                                detectedModules.Add("multiport");
+                            }
+                            break;
+                        case "--sports":
+                            sourcePort = part.Groups[3].Value;
+                            if (!detectedModules.Contains("multiport"))
+                            {
+                                detectedModules.Add("multiport");
+                            }
+                            break;
                         case "-m":
                             // add module to list of detected modules
-                            if (!detectedModules.Contains(part.Groups[2].Value))
+                            if (!detectedModules.Contains(part.Groups[3].Value))
                             {
-                                detectedModules.Add(part.Groups[2].Value);
+                                detectedModules.Add(part.Groups[3].Value);
                             }
                             break;
                         default:
-                            additionalParameters += commandLineOption + " " + part.Groups[2].Value + " "; //
+                            additionalParameters += part.Value; //
                             //IsManualRule = true; //an unsupported commandlineoption was set for this rule, so it is a manual rule.
                             break;
                     }
                 }
+                additionalParameters = additionalParameters.Trim();
                 // check whether the module is part of a supported commandlineoption. if not, add to additionalmodules. SEE COMMENT AT fulllineFromValues!!
                 List<string> nonAdditionalModules = new List<string>() { "physdev", "limit", "state", "owner", "tcp", "udp" }; //list of modules that are not added as additional parameters.
                 if (detectedModules.Count > 0)
@@ -374,34 +389,8 @@ namespace iptables_gcli
                         break;
                 }
                 unprocessedFullLine=line;
-
-
-                // Regex AddRuleRegex = new Regex(@"(-(A|P|N|I|R|F|D)) (.*?) ");
-                // Regex findCommandActionRegex = new Regex(@"(-.)[ |\n]"); //group 1
-                // Regex protocolRegex = new Regex(@"-p (tcp|udp)"); //group 1
-                // Regex sourceRegex = new Regex(@"-s (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2})"); //group 1
-                // Regex destinationRegex = new Regex(@"-d (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2})"); //group 1
-                // Regex outInterfaceRegex = new Regex(@"-o ((\w|-)+)"); //group 1
-                // Regex inInterfaceRegex = new Regex(@"-i ((\w|-)+)"); //group 1
-                // Regex targetRegex = new Regex(@"-j (\w+)"); //group 1
-                // Regex commentRegex = new Regex(@"# (.*)"); //group 1
-                // Regex sizeRegex = new Regex(@"-m (\w+)"); //group 1
-                // Regex destinationPortRegex = new Regex(@"--dport (\d{1,5})");
-                // Regex sourcePortRegex = new Regex(@"--sport (\d{1,5})");
-
-
-                // originalFullLine = line;
-                // chain = AddRuleRegex.Match(line).Groups[3].Value;
-                // target = targetRegex.Match(line).Groups[1].Value;
-                // source = sourceRegex.Match(line).Groups[1].Value;
-                // destination = destinationRegex.Match(line).Groups[1].Value;
-                // destinationPort = destinationPortRegex.Match(line).Groups[1].Value;
-                // sourcePort = sourcePortRegex.Match(line).Groups[1].Value;
-                // outInterface = outInterfaceRegex.Match(line).Groups[1].Value;
-                // inInterface = inInterfaceRegex.Match(line).Groups[1].Value;
-                // protocol = protocolRegex.Match(line).Groups[1].Value;
-
             }
+            // This is more of a reference than anything else right now.
             public struct Target
             {
                 public const string ACCEPT = "ACCEPT";
@@ -412,6 +401,7 @@ namespace iptables_gcli
                 public const string NOTRACK = "NOTRACK";
                 public const string REDIRECT = "REDIRECT";
             }
+            // Types other than "ADD" are not supported yet.
             public struct RuleType
             {
                 public const string ADD = "-A";
@@ -435,11 +425,6 @@ namespace iptables_gcli
             public string protocol { get; set; } = "";
             public string source { get; set; } = "";
             public string destination { get; set; } = "";
-            //private string _source = "";
-            //public string source { get {if (_source == "") { return "0.0.0.0/0"; } return _source; } set {_source = value; } }
-            //private string _destination = "";
-            //public string destination { get {if (_destination == "") { return "0.0.0.0/0"; } return _destination; } set { _destination = value; } }
-            //public string destinationParameters {get { return "-d " + destination; } }
 
             public string destinationPort { get; set; } = "";
             public string sourcePort { get; set; } = "";
@@ -447,7 +432,7 @@ namespace iptables_gcli
             public string inInterface { get; set; } = "";
             //public string comment { get; set; } = "";
             // generates a new fullline from the current rule. falls back to the original fullline if the rule is not valid
-            public string fulllineFromValues
+            public virtual string fulllineFromValues
             {
                 get
                 {
@@ -458,8 +443,26 @@ namespace iptables_gcli
                     if (protocol != "") { returnString += $" -p {protocol}"; }
                     if (source != "") { returnString += $" -s {source}"; }
                     if (destination != "") { returnString += $" -d {destination}"; }
-                    if (destinationPort != "") { returnString += $" --dport {destinationPort}"; }
-                    if (sourcePort != "") { returnString += $" --sport {sourcePort}"; }
+                    if (destinationPort != "") 
+                    { 
+                        if (additionalModules.Contains("multiport"))
+                        {
+                            returnString += $" --dports {destinationPort}"; 
+                        } else 
+                        {
+                            returnString += $" --dport {destinationPort}"; 
+                        }
+                    }
+                    if (sourcePort != "") 
+                    { 
+                        if (additionalModules.Contains("multiport"))
+                        {
+                            returnString += $" --sports {sourcePort}"; 
+                        } else 
+                        {
+                            returnString += $" --dport {sourcePort}"; 
+                        }
+                    }
                     if (outInterface != "") { returnString += $" -o {outInterface}"; }
                     if (inInterface != "") { returnString += $" -i {inInterface}"; }
                     if (physicalInInterface != "") { returnString += $" -m physdev --physdev-in {physicalInInterface}"; }
@@ -481,10 +484,6 @@ namespace iptables_gcli
                     if (target != "") { returnString += $" -j {target}"; }
 
                     return returnString;
-
-                    //return $"{ruleType} {chain}{(protocol != "" ? $" -p {protocol}" : "")}{(source != "" && source != "0.0.0.0/0" ? $" -s {source} " : "")}{(destination != "" && destination != "0.0.0.0/0" ? $" -d {destination} " : "")}{(destinationPort != "" ? $" --dport {destinationPort}" : "")}{(sourcePort != "" ? $" --sport {sourcePort}" : "")}{(outInterface != "" ? $" -o {outInterface}" : "")}{(inInterface != "" ? $" -i {inInterface}" : "")}{(target != "" ? $" -j {target}" : "")}";
-                    //return $"-A {chain}{(protocol != "" ? $" -p {protocol}" : "")} {(source != "" && source != "0.0.0.0/0" ? $"-s {source} " : "")}{(destination != "" && destination != "0.0.0.0/0" ? $"-d {destination} " : "")}{(destinationPort != "" ? $"--dport {destinationPort} " : "")}{(sourcePort != "" ? $"--sport {sourcePort} " : "")}-j {target}";
-
                 }
             }
             public string physicalInInterface {get;set ;} = "";
@@ -503,7 +502,50 @@ namespace iptables_gcli
             public string packetBeingBridged {get;set ;} = "";
             public string additionalModules {get;set ;} = "";
             public string additionalParameters {get;set ;} = "";
-            private string unprocessedFullLine { get; set; } = ""; //the rule string that the rule was created from. used for manual rules.
+            protected string unprocessedFullLine { get; set; } = ""; //the rule string that the rule was created from. used for manual rules.
+        }
+
+        /// <summary>
+        /// A rule that has NAT-table functionality
+        /// </summary>
+        public class NATRule : Rule
+        {
+            public NATRule() : base() { }
+            public NATRule(string fullline) : base(fullline)
+            {
+                MatchCollection matches = commandLineParameterRegex.Matches(additionalParameters);
+                foreach (Match part in matches)
+                {
+                    string commandLineOption = part.Groups[1].Value;
+                    switch (commandLineOption)
+                    {
+                        case "--to-destination":
+                            toDestination = part.Groups[3].Value;
+                            additionalParameters = additionalParameters.Replace(part.Value, "");
+                            break;
+                        case "--to-source":
+                            toSource = part.Groups[3].Value;
+                            additionalParameters = additionalParameters.Replace(part.Value, "");
+                            break;
+                        default:
+                            // ignore unrelated options
+                            break;
+                    }
+                }
+            }
+            public override string fulllineFromValues
+            { 
+                get
+                {
+                    if (ruleType != Rule.RuleType.ADD) { return $"{unprocessedFullLine}"; } // if the rule is not explicitly an "ADD" rule, then stop attempting to craft a fullline from the values.
+                    string returnString = "";
+                    if (toDestination != "") { returnString += $" --to-destination {toDestination}"; }
+                    if (toSource != "") { returnString += $" --to-source {toSource}"; }
+                    return $"{base.fulllineFromValues}{returnString}"; //TODO: Find a way to properly position NAT arguments
+                }
+            }
+            public string toDestination { get; set; } = "";
+            public string toSource { get; set; } = "";
         }
     }
 }

@@ -130,14 +130,20 @@ namespace iptables_gcli
                 };
                 var textbox = new TextField(selectedRule.fulllineFromValues)
                 {
-                    X = 30,
+                    X = 20,
                     Y = 1,
                     Width = Dim.Fill(1)
-
                 };
                 saveAndExitDialog.Clicked += () =>
                 {
-                    ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.Rule(textbox.Text.ToString());
+                    if (ProgramState.Table == "nat")
+                    {
+                        ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.NATRule(textbox.Text.ToString());
+                    }
+                    else
+                    {
+                        ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.Rule(textbox.Text.ToString());
+                    }
                     //dialog.Running = false;
                     Application.RequestStop();
                     rulesListview.SetSource(ipt.getiptablesRules().Select(x => x.fulllineFromValues).ToList());
@@ -170,7 +176,7 @@ namespace iptables_gcli
                     Width = Dim.Fill(1),
                     Height = Dim.Fill(1),
                     ShowVerticalScrollIndicator = true,
-                    ContentSize = new Size(100, 300),
+                    ContentSize = new Size(100, 100),
                     AutoHideScrollBars = false
                 };
                 //dialog.ColorScheme = new ColorScheme()
@@ -181,7 +187,7 @@ namespace iptables_gcli
                 //    HotNormal = new Terminal.Gui.Attribute(Color.White, Color.Black)
                 //};
                 int selectedRuleIndex = rulesListview.SelectedItem;
-                iptablesInterface.Rule selectedRule = ipt.getiptablesRules()[selectedRuleIndex];
+                var selectedRule = ipt.getiptablesRules()[selectedRuleIndex];
                 dialog.Add(new Label($"Rule: {(selectedRule.fulllineFromValues).ToString()}")
                 {
                     X = 0,
@@ -497,9 +503,97 @@ namespace iptables_gcli
                         Y = Pos.Bottom(additionalModulesTextbox) + 1,
                         Width = Dim.Fill(1)
                     };
+
+                    var toDestinationLabel = new Label("To Destination:")
+                    {
+                        X = 0,
+                        Y = Pos.Bottom(additionalParametersTextbox) + 1
+                    };
+                    var toDestinationTextbox = new TextField()
+                    {
+                        X = 30,
+                        Y = Pos.Bottom(additionalParametersTextbox) + 1,
+                        Width = Dim.Fill(1)
+                    };
+                    var toSourceLabel = new Label("To Source:")
+                    {
+                        X = 0,
+                        Y = Pos.Bottom(toDestinationLabel) + 1
+                    };
+                    var toSourceTextBox = new TextField()
+                    {
+                        X = 30,
+                        Y = Pos.Bottom(toDestinationLabel) + 1,
+                        Width = Dim.Fill(1)
+
+                    };
                     saveAndExitDialog.Clicked += () =>
                     {
-                        ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.Rule(iptablesInterface.Rule.RuleType.ADD, chainTextbox.Text.ToString(), protocolSelect.Text.ToString(), sourceTextbox.Text.ToString(), destinationTextbox.Text.ToString(), targetSelect.Text.ToString(), outInterfaceTextbox.Text.ToString(), inInterfaceTextbox.Text.ToString(), destinationPortTextbox.Text.ToString(), sourcePortTextbox.Text.ToString(), physicalInInterfaceTextbox.Text.ToString(), physicalOutInterfaceTextbox.Text.ToString(), fragmentationSelect.Text.ToString(), tcpflagsTextBox.Text.ToString(), tcpOptionNumberSelect.Text.ToString(), icmpTypeSelect.Text.ToString(), ethernetAddressTextbox.Text.ToString(), packetflowRateTextbox.Text.ToString(), packetburstRateTextbox.Text.ToString(), connectionStatesTextBox.Text.ToString(), serviceTextbox.Text.ToString(), packetIncomingBridgeInterfaceComboBox.Text.ToString(), packetOutgoingBridgeInterfaceComboBox.Text.ToString(), packetBeingBridgedComboBox.Text.ToString(), additionalModulesTextbox.Text.ToString(), additionalParametersTextbox.Text.ToString());
+                        if (selectedRule is iptablesInterface.NATRule)
+                        {
+                            ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.NATRule() 
+                            {
+                                ruleType = iptablesInterface.Rule.RuleType.ADD,
+                                chain = chainTextbox.Text.ToString(),
+                                protocol = protocolSelect.Text.ToString(),
+                                source = sourceTextbox.Text.ToString(),
+                                destination = destinationTextbox.Text.ToString(),
+                                target = targetSelect.Text.ToString(),
+                                outInterface = outInterfaceTextbox.Text.ToString(),
+                                inInterface = inInterfaceTextbox.Text.ToString(),
+                                destinationPort = destinationPortTextbox.Text.ToString(),
+                                sourcePort = sourcePortTextbox.Text.ToString(),
+                                physicalInInterface = physicalInInterfaceTextbox.Text.ToString(),
+                                physicalOutInterface = physicalOutInterfaceTextbox.Text.ToString(),
+                                fragmentation = fragmentationSelect.Text.ToString(),
+                                tcpflags = tcpflagsTextBox.Text.ToString(),
+                                tcpOptionNumber = tcpOptionNumberSelect.Text.ToString(),
+                                icmpType = icmpTypeSelect.Text.ToString(),
+                                ethernetAddress = ethernetAddressTextbox.Text.ToString(),
+                                packetflowRate = packetflowRateTextbox.Text.ToString(),
+                                packetburstRate = packetburstRateTextbox.Text.ToString(),
+                                connectionStates = connectionStatesTextBox.Text.ToString(),
+                                service = serviceTextbox.Text.ToString(),
+                                packetIncomingBridgeInterface = packetIncomingBridgeInterfaceComboBox.Text.ToString(),
+                                packetOutgoingBridgeInterface = packetOutgoingBridgeInterfaceComboBox.Text.ToString(),
+                                packetBeingBridged = packetBeingBridgedComboBox.Text.ToString(),
+                                additionalModules = additionalModulesTextbox.Text.ToString(),
+                                additionalParameters = additionalParametersTextbox.Text.ToString(),
+                                toDestination = toDestinationTextbox.Text.ToString(),
+                                toSource = toSourceTextBox.Text.ToString()
+                            };
+                        } else 
+                        {
+                            ipt.getiptablesRules()[rulesListview.SelectedItem] = new iptablesInterface.Rule() 
+                            {
+                                ruleType = iptablesInterface.Rule.RuleType.ADD,
+                                chain = chainTextbox.Text.ToString(),
+                                protocol = protocolSelect.Text.ToString(),
+                                source = sourceTextbox.Text.ToString(),
+                                destination = destinationTextbox.Text.ToString(),
+                                target = targetSelect.Text.ToString(),
+                                outInterface = outInterfaceTextbox.Text.ToString(),
+                                inInterface = inInterfaceTextbox.Text.ToString(),
+                                destinationPort = destinationPortTextbox.Text.ToString(),
+                                sourcePort = sourcePortTextbox.Text.ToString(),
+                                physicalInInterface = physicalInInterfaceTextbox.Text.ToString(),
+                                physicalOutInterface = physicalOutInterfaceTextbox.Text.ToString(),
+                                fragmentation = fragmentationSelect.Text.ToString(),
+                                tcpflags = tcpflagsTextBox.Text.ToString(),
+                                tcpOptionNumber = tcpOptionNumberSelect.Text.ToString(),
+                                icmpType = icmpTypeSelect.Text.ToString(),
+                                ethernetAddress = ethernetAddressTextbox.Text.ToString(),
+                                packetflowRate = packetflowRateTextbox.Text.ToString(),
+                                packetburstRate = packetburstRateTextbox.Text.ToString(),
+                                connectionStates = connectionStatesTextBox.Text.ToString(),
+                                service = serviceTextbox.Text.ToString(),
+                                packetIncomingBridgeInterface = packetIncomingBridgeInterfaceComboBox.Text.ToString(),
+                                packetOutgoingBridgeInterface = packetOutgoingBridgeInterfaceComboBox.Text.ToString(),
+                                packetBeingBridged = packetBeingBridgedComboBox.Text.ToString(),
+                                additionalModules = additionalModulesTextbox.Text.ToString(),
+                                additionalParameters = additionalParametersTextbox.Text.ToString()
+                            };
+                        }
                         //dialog.Running = false;
                         rulesListview.SetSource(ipt.getiptablesRules().Select(x => x.fulllineFromValues).ToList());
                         rulesListview.SelectedItem = selectedRuleIndex;
@@ -555,6 +649,16 @@ namespace iptables_gcli
                     scrollview.Add(additionalModulesTextbox);
                     scrollview.Add(additionalParametersLabel);
                     scrollview.Add(additionalParametersTextbox);
+                    if(selectedRule is iptablesInterface.NATRule)
+                    {
+                        targetSelect.SetSource(new List<string>() { "DNAT", "SNAT", "MASQUERADE" });
+                        toDestinationTextbox.Text = selectedRule.toDestination;
+                        toSourceTextBox.Text = selectedRule.toSource;
+                        scrollview.Add(toDestinationLabel);
+                        scrollview.Add(toDestinationTextbox);
+                        scrollview.Add(toSourceLabel);
+                        scrollview.Add(toSourceTextBox);
+                    }
                     dialog.Add(scrollview);
 
                     //scrollview.Add(view);
@@ -649,7 +753,7 @@ namespace iptables_gcli
                     var exitDialog = new Button("Exit")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Bottom(dialog) - 5,
+                        Y = Pos.Bottom(dialog) - 6,
                         Width = Dim.Fill(5),
                         Height = 1
                     };
@@ -664,7 +768,7 @@ namespace iptables_gcli
                         X = 0,
                         Y = 0,
                         Width = Dim.Fill(1),
-                        Height = Dim.Fill(1)-5,
+                        Height = Dim.Fill(1) - 7,
                         Text = string.Join("\n", failedrules),
                         Enabled = false
                     };
@@ -689,7 +793,7 @@ namespace iptables_gcli
                     var exitDialog = new Button("Exit")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Bottom(dialog) - 5,
+                        Y = Pos.Bottom(dialog) - 6,
                         Width = Dim.Fill(5),
                         Height = 1
                     };
