@@ -741,7 +741,8 @@ namespace iptables_gcli
                     var dialog = new Dialog("Failed to apply rules")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Center()
+                        Y = Pos.Center(),
+                        Height = Dim.Fill() - 5
                     };
                     //dialog.ColorScheme = new ColorScheme()
                     //{
@@ -753,7 +754,7 @@ namespace iptables_gcli
                     var exitDialog = new Button("Exit")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Bottom(dialog) - 6,
+                        Y = Pos.Bottom(dialog) - 5,
                         Width = Dim.Fill(5),
                         Height = 1
                     };
@@ -768,7 +769,7 @@ namespace iptables_gcli
                         X = 0,
                         Y = 0,
                         Width = Dim.Fill(1),
-                        Height = Dim.Fill(1) - 7,
+                        Height = Dim.Fill(1) - 8,
                         Text = string.Join("\n", failedrules),
                         Enabled = false
                     };
@@ -781,7 +782,8 @@ namespace iptables_gcli
                     var dialog = new Dialog("Successfully applied rules")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Center()
+                        Y = Pos.Center(),
+                        Height = Dim.Fill() - 5
                     };
                     //dialog.ColorScheme = new ColorScheme()
                     //{
@@ -793,7 +795,7 @@ namespace iptables_gcli
                     var exitDialog = new Button("Exit")
                     {
                         X = Pos.Center(),
-                        Y = Pos.Bottom(dialog) - 6,
+                        Y = Pos.Bottom(dialog) - 8,
                         Width = Dim.Fill(5),
                         Height = 1
                     };

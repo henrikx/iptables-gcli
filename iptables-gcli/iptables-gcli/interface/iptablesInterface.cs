@@ -69,7 +69,7 @@ namespace iptables_gcli
             }
             //flush rules first
             {
-                ProcessStartInfo psi = new ProcessStartInfo("iptables", "-F");
+                ProcessStartInfo psi = new ProcessStartInfo("iptables", $"-F -t {ProgramState.Table}");
                 psi.UseShellExecute = false;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
@@ -78,7 +78,7 @@ namespace iptables_gcli
                 p.WaitForExit();
             }
             {
-                ProcessStartInfo psi = new ProcessStartInfo("iptables", "-X");
+                ProcessStartInfo psi = new ProcessStartInfo("iptables", $"-X -t {ProgramState.Table}");
                 psi.UseShellExecute = false;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
@@ -89,7 +89,7 @@ namespace iptables_gcli
             foreach (string line in lines)
             {
                 //run each line as iptables command
-                ProcessStartInfo psi = new ProcessStartInfo("iptables", line);
+                ProcessStartInfo psi = new ProcessStartInfo("iptables", $"-t {ProgramState.Table} {line}");
                 psi.UseShellExecute = false;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
@@ -134,6 +134,7 @@ namespace iptables_gcli
                     string line = proc.StandardOutput.ReadLine();
                     output += line + "\n" ;
                 }
+                proc.WaitForExit();
                 if (proc.ExitCode != 0)
                 {
                     throw new Exception($"Error while getting iptables rules: {output}");
@@ -440,6 +441,7 @@ namespace iptables_gcli
                     if (ruleType != Rule.RuleType.ADD /*|| IsManualRule*/) { return $"{unprocessedFullLine}"; } // if the rule is not explicitly an "ADD" rule, then stop attempting to craft a fullline from the values.
                     string returnString = "";
                     returnString += $"{ruleType} {chain}";
+                    if (additionalModules != "") { returnString += $" -m {String.Join(" -m ", additionalModules.Split(","))}"; } //basic implementation at best.
                     if (protocol != "") { returnString += $" -p {protocol}"; }
                     if (source != "") { returnString += $" -s {source}"; }
                     if (destination != "") { returnString += $" -d {destination}"; }
@@ -472,14 +474,13 @@ namespace iptables_gcli
                     if (tcpOptionNumber != "") { returnString += $" --tcp-option {tcpOptionNumber}"; }
                     if (icmpType != "") { returnString += $" --icmp-type {icmpType}"; }
                     if (ethernetAddress != "") { returnString += $" -m mac --mac-source {ethernetAddress}"; }
-                    if (packetflowRate != "") { returnString += $" -m limit --limit {packetflowRate}/s"; }
+                    if (packetflowRate != "") { returnString += $" -m limit --limit {packetflowRate}"; }
                     if (packetburstRate != "") { returnString += $" -m limit --limit-burst {packetburstRate}"; }
                     if (connectionStates != "") { returnString += $" --ctstate {connectionStates}"; }
                     if (service != "") { returnString += $" -m owner --uid-owner {service}"; } //not sure about this one right now.
                     if (packetIncomingBridgeInterface != "") { returnString += $" -m physdev --physdev-is-in {packetIncomingBridgeInterface}"; }
                     if (packetOutgoingBridgeInterface != "") { returnString += $" -m physdev --physdev-is-out {packetOutgoingBridgeInterface}"; }
                     if (packetBeingBridged != "") { returnString += $" -m physdev --physdev-is-bridged {packetBeingBridged}"; }
-                    if (additionalModules != "") { returnString += $" -m {String.Join(" -m ", additionalModules.Split(","))}"; } //basic implementation at best.
                     if (additionalParameters != "") { returnString += $" {additionalParameters}"; }
                     if (target != "") { returnString += $" -j {target}"; }
 
