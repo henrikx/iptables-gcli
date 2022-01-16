@@ -20,7 +20,7 @@ namespace iptables_gcli
                         return;
                     }
                     else if (args[0] == "--version" || args[0] == "-v") {
-                        Console.WriteLine("iptables-gcli version 0.1");
+                        Console.WriteLine("iptables-gcli version 0.2");
                         Console.WriteLine("Copyright (C) 2021  iptables-gcli contributors");
                         Console.WriteLine("This is free software; see the source for copying conditions."); //TODO: Add license
                         return;
