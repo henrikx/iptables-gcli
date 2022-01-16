@@ -351,7 +351,7 @@ namespace iptables_gcli
                 }
                 additionalParameters = additionalParameters.Trim();
                 // check whether the module is part of a supported commandlineoption. if not, add to additionalmodules. SEE COMMENT AT fulllineFromValues!!
-                List<string> nonAdditionalModules = new List<string>() { "physdev", "limit", "state", "owner", "tcp", "udp" }; //list of modules that are not added as additional parameters.
+                List<string> nonAdditionalModules = new List<string>() { "physdev", "limit", "owner", "tcp", "udp" }; //list of modules that are not added as additional parameters.
                 if (detectedModules.Count > 0)
                 {
                     foreach (string module in detectedModules)
