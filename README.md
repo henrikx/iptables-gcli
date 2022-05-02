@@ -8,7 +8,7 @@ To save your rules, please use `iptables-save` and `iptables-persistent`. This i
 
 # Notes
 - This software is currently in alpha and is **NOT READY FOR PRODUCTION USE!**
-- `iptables` [does not have a programmatic way of managing it](https://stackoverflow.com/questions/109553/how-can-i-programmatically-manage-iptables-rules-on-the-fly). As a result, the application solely uses 'iptables' commands to interact with it. This approach has a few drawbacks, such as the fact that while applying rules, the 'iptables' rules may be inactive for a little period of time while the rules are flushed (under 0.5 seconds). 
+- `iptables` [does not have a programmatic way of managing it](https://stackoverflow.com/questions/109553/how-can-i-programmatically-manage-iptables-rules-on-the-fly). As a result, the application solely uses `iptables` commands to interact with it. This approach has a few drawbacks, such as the fact that while applying rules, the `iptables` rules may be inactive for a little period of time while the rules are flushed (under 0.5 seconds). 
 
 # Building
 Due to the nature of .NET Core, even though this is a Linux program it may still be built on Windows machines.
