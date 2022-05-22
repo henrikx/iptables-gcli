@@ -431,8 +431,9 @@ namespace iptables_gcli
             public string sourcePort { get; set; } = "";
             public string outInterface { get; set; } = "";
             public string inInterface { get; set; } = "";
-            //public string comment { get; set; } = "";
-            // generates a new fullline from the current rule. falls back to the original fullline if the rule is not valid
+            /// <summary>
+            /// generates a new fullline from the current rule. falls back to the original fullline if the rule is not valid
+            /// </summary>
             public virtual string fulllineFromValues
             {
                 get
@@ -481,8 +482,8 @@ namespace iptables_gcli
                     if (packetIncomingBridgeInterface != "") { returnString += $" -m physdev --physdev-is-in {packetIncomingBridgeInterface}"; }
                     if (packetOutgoingBridgeInterface != "") { returnString += $" -m physdev --physdev-is-out {packetOutgoingBridgeInterface}"; }
                     if (packetBeingBridged != "") { returnString += $" -m physdev --physdev-is-bridged {packetBeingBridged}"; }
-                    if (additionalParameters != "") { returnString += $" {additionalParameters}"; }
                     if (target != "") { returnString += $" -j {target}"; }
+                    if (additionalParameters != "") { returnString += $" {additionalParameters}"; }
 
                     return returnString;
                 }
