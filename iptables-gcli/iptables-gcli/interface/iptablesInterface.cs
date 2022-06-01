@@ -463,7 +463,7 @@ namespace iptables_gcli
                             returnString += $" --sports {sourcePort}"; 
                         } else 
                         {
-                            returnString += $" --dport {sourcePort}"; 
+                            returnString += $" --sport {sourcePort}"; 
                         }
                     }
                     if (outInterface != "") { returnString += $" -o {outInterface}"; }
