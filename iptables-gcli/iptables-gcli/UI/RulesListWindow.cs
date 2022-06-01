@@ -324,7 +324,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5,
                     };
-                    protocolSelect.SetSource(new string[] { "tcp", "udp", "icmp", "all" });
+                    protocolSelect.SetSource(new string[] { "tcp", "udp", "icmp", "" });
                     var targetLabel = new Label("Target:")
                     {
                         X = 0,
@@ -350,7 +350,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5
                     };
-                    fragmentationSelect.SetSource(new string[] { "yes", "no" });
+                    fragmentationSelect.SetSource(new string[] { "", "yes", "no" });
                     var tcpflagsLabel = new Label("TCP Flags:")
                     {
                         X = 0,
@@ -385,7 +385,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5
                     };
-                    icmpTypeSelect.SetSource(new string[] { "echo-reply", "destination-unreachable", "source-quench", "redirect", "echo-request", "router-advertisement", "router-solicitation", "time-exceeded", "parameter-problem", "timestamp-request", "timestamp-reply", "address-mask-request", "address-mask-reply" });
+                    icmpTypeSelect.SetSource(new string[] { "", "echo-reply", "destination-unreachable", "source-quench", "redirect", "echo-request", "router-advertisement", "router-solicitation", "time-exceeded", "parameter-problem", "timestamp-request", "timestamp-reply", "address-mask-request", "address-mask-reply" });
 
                     var ethernetAddressLabel = new Label("Ethernet Address:")
                     {
@@ -454,7 +454,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5
                     };
-                    packetIncomingBridgeInterfaceComboBox.SetSource(new string[] { "yes", "no" });
+                    packetIncomingBridgeInterfaceComboBox.SetSource(new string[] { "", "yes", "no" });
                     var packetOutgoingBridgeInterfaceLabel = new Label("Packet Outgoing\non Bridge Interface:")
                     {
                         X = 0,
@@ -467,7 +467,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5
                     };
-                    packetOutgoingBridgeInterfaceComboBox.SetSource(new string[] { "yes", "no" });
+                    packetOutgoingBridgeInterfaceComboBox.SetSource(new string[] { "", "yes", "no"});
                     var packetBeingBridgedLabel = new Label("Packet Being Bridged:")
                     {
                         X = 0,
@@ -480,7 +480,7 @@ namespace iptables_gcli
                         Width = Dim.Fill(1),
                         Height = 5
                     };
-                    packetBeingBridgedComboBox.SetSource(new string[] { "yes", "no" });
+                    packetBeingBridgedComboBox.SetSource(new string[] { "", "yes", "no" });
                     var additionalModules = new Label("Additional Modules:")
                     {
                         X = 0,
